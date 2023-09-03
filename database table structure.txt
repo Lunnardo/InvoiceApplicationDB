@@ -1,0 +1,14 @@
+CREATE TABLE cash (
+    bill_no int(11),
+    total_amount double,
+    cash double,
+    cash_change double
+);
+
+CREATE TABLE sale (
+    bill_no int(50),
+    item_name varchar(50),
+    quantity double,
+    item_price double,
+    sub_total double
+);

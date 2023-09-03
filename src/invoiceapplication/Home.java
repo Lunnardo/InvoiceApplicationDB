@@ -12,11 +12,13 @@ import java.awt.print.Paper;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+
 
 /**
  *
@@ -31,21 +33,32 @@ public class Home extends javax.swing.JFrame {
     String billNo = "";
     Double totalAmount = 0.0;
     Double cash = 0.0;
-    Double balance = 0.0;
     Double bHeight = 0.0;
     Double subTotals = 0.0;
-    Double txtChangeValue = 0.0;
-    Double txtCashValue = 0.0;
+    Double change = 0.0;
     
-    ArrayList<String> itemName = new ArrayList<String>();
-    ArrayList<String> itemQuantity = new ArrayList<String>();
-    ArrayList<String> itemPrice = new ArrayList<String>();
-    ArrayList<String> subTotal = new ArrayList<String>();
+    ArrayList<String> itemName = new ArrayList<>();
+    ArrayList<String> itemQuantity = new ArrayList<>();
+    ArrayList<String> itemPrice = new ArrayList<>();
+    ArrayList<String> subTotal = new ArrayList<>();
     
+    Connection conn=null;
+    PreparedStatement prestat=null;
+    ResultSet rs=null;
+    
+    String itemNames;
+    Double itemQuantities;
+    Double itemPrices;
+    Double subTotalNew;
+    Double totalAmounts;
+    Double billNos;
+    Double cashs;
+    Double changes;
     
     public Home() {
         initComponents();
-    }
+        conn = DBConnection.connect();
+    }   
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -75,6 +88,9 @@ public class Home extends javax.swing.JFrame {
         txtCash = new javax.swing.JTextField();
         txtChange = new javax.swing.JTextField();
         buttonPrint = new javax.swing.JButton();
+        buttonPay = new javax.swing.JButton();
+        txtBillNo = new javax.swing.JTextField();
+        labelBillNo = new javax.swing.JLabel();
 
         jTextField4.setText("jTextField4");
 
@@ -155,17 +171,32 @@ public class Home extends javax.swing.JFrame {
             }
         });
 
+        buttonPay.setText("Pay");
+        buttonPay.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                buttonPayActionPerformed(evt);
+            }
+        });
+
+        txtBillNo.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txtBillNoActionPerformed(evt);
+            }
+        });
+
+        labelBillNo.setText("Bill No.");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(99, 99, 99)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                        .addContainerGap()
                         .addComponent(labelInvoicePrintingSystem, javax.swing.GroupLayout.PREFERRED_SIZE, 222, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(28, 28, 28)
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                        .addGap(49, 49, 49)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                 .addComponent(labelQuantity, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -183,19 +214,35 @@ public class Home extends javax.swing.JFrame {
                             .addComponent(txtSubTotal)
                             .addComponent(txtTotalAmount, javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(txtCash, javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(txtChange)
-                            .addComponent(buttonAdd, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 85, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(buttonPrint, javax.swing.GroupLayout.PREFERRED_SIZE, 85, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(32, Short.MAX_VALUE))
+                            .addComponent(txtChange)))
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(labelBillNo, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(txtBillNo, javax.swing.GroupLayout.PREFERRED_SIZE, 75, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(54, 54, 54)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(buttonAdd, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(30, 30, 30))
+            .addGroup(layout.createSequentialGroup()
+                .addGap(77, 77, 77)
+                .addComponent(buttonPrint, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 138, Short.MAX_VALUE)
+                .addComponent(buttonPay, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(29, 29, 29))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(26, 26, 26)
+                .addContainerGap()
                 .addComponent(labelInvoicePrintingSystem, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(27, 27, 27)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(labelBillNo)
+                    .addComponent(txtBillNo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(8, 8, 8)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -228,9 +275,11 @@ public class Home extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(labelChange)
                     .addComponent(txtChange, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addComponent(buttonPrint)
-                .addContainerGap(46, Short.MAX_VALUE))
+                .addGap(45, 45, 45)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(buttonPay)
+                    .addComponent(buttonPrint))
+                .addContainerGap(28, Short.MAX_VALUE))
         );
 
         pack();
@@ -255,12 +304,28 @@ public class Home extends javax.swing.JFrame {
     }//GEN-LAST:event_txtTotalAmountActionPerformed
 
     private void buttonAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonAddActionPerformed
-        itemName.add(txtItemName.getText());
-        itemQuantity.add(txtItemQuantity.getText());
-        itemPrice.add(txtItemPrice.getText());
-        subTotal.add(txtSubTotal.getText());
+//        itemName.add(txtItemName.getText());
+//        itemQuantity.add(txtItemQuantity.getText());
+//        itemPrice.add(txtItemPrice.getText());
+//        subTotal.add(txtSubTotal.getText());
+
+        itemNames = txtItemName.getText();
+        itemQuantities = Double.valueOf(txtItemQuantity.getText());
+        itemPrices = Double.valueOf(txtItemPrice.getText());
+        subTotalNew = Double.valueOf(txtSubTotal.getText());
+        billNos = Double.valueOf(txtBillNo.getText());
+        
         totalAmount = totalAmount + Double.valueOf(txtSubTotal.getText());
         txtTotalAmount.setText(totalAmount + "");
+        
+        try{
+            String qr = "INSERT INTO `sale`(`bill_no`, `item_name`, `quantity`, `item_price`, `sub_total`) VALUES ('"+billNos+"','"+itemNames+"','"+itemQuantities+"','"+itemPrices+"','"+subTotalNew+"')";
+            prestat = conn.prepareStatement(qr);
+            prestat.execute();
+        } catch(Exception e) {
+            JOptionPane.showConfirmDialog(rootPane, e);
+        }
+        
         clear();
         txtCash.requestFocusInWindow();
     }//GEN-LAST:event_buttonAddActionPerformed
@@ -340,9 +405,9 @@ public class Home extends javax.swing.JFrame {
             g2d.drawString("-------------------------------------",10,y);y+=yShift;
             g2d.drawString(" Total amount:               "+txtTotalAmount.getText()+"   ",10,y);y+=yShift;
             g2d.drawString("-------------------------------------",10,y);y+=yShift;
-            g2d.drawString(" Cash      :                 "+txtCashValue+"   ",10,y);y+=yShift;
+            g2d.drawString(" Cash      :                 "+cash+"   ",10,y);y+=yShift;
             g2d.drawString("-------------------------------------",10,y);y+=yShift;
-            g2d.drawString(" Balance   :                 "+txtChange.getText()+"   ",10,y);y+=yShift;
+            g2d.drawString(" Change   :                 "+txtChange.getText()+"   ",10,y);y+=yShift;
   
             g2d.drawString("*************************************",10,y);y+=yShift;
             g2d.drawString("             Thank You            ",10,y);y+=yShift;
@@ -361,14 +426,16 @@ public class Home extends javax.swing.JFrame {
     }
     
     private void txtCashActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtCashActionPerformed
-        txtCashValue = (Double.valueOf(txtCash.getText()));
-        txtCash.setText(txtCashValue + "");
+        cash = (Double.valueOf(txtCash.getText()));
+        txtCash.setText(cash + "");
         txtChange.requestFocusInWindow();
-        txtChangeValue = (Double.valueOf(txtCash.getText()) - Double.valueOf(txtTotalAmount.getText()));
-        txtChange.setText(txtChangeValue + "");
+        change = (Double.valueOf(txtCash.getText()) - Double.valueOf(txtTotalAmount.getText()));
+        txtChange.setText(change + "");
     }//GEN-LAST:event_txtCashActionPerformed
 
     private void buttonPrintActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonPrintActionPerformed
+        getData();
+        getBillData();
         bHeight = Double.valueOf(itemName.size());
         //JOptionPane.showConfirmDialog(rootPane, bHeight);
         
@@ -381,16 +448,67 @@ public class Home extends javax.swing.JFrame {
             ex.printStackTrace();
         }
     }//GEN-LAST:event_buttonPrintActionPerformed
-
+    
+    private void getData(){
+        try {
+            String sql="SELECT `bill_no`, `item_name`, `quantity`, `item_price`, `sub_total` FROM `sale` WHERE bill_no='"+billNos+"'";
+        prestat = conn.prepareStatement(sql);
+             rs = prestat.executeQuery();
+             while(rs.next())
+             {
+                 itemName.add(rs.getString("item_name"));
+                 itemQuantity.add(rs.getString("quantity"));
+                 itemPrice.add(rs.getString("item_price"));
+                 subTotal.add(rs.getString("sub_total"));
+                }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void getBillData(){
+        try {
+            String sql="SELECT `bill_no`, `total_amount`, `cash`, `cash_change` FROM `cash` WHERE bill_no='"+billNos+"'";
+        prestat = conn.prepareStatement(sql);
+             rs = prestat.executeQuery();
+             while(rs.next())
+             {
+                 totalAmount = rs.getDouble("total_amount");
+                 cash = rs.getDouble("cash");
+                 change = rs.getDouble("cash_change");
+                }
+             
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
     private void txtSubTotalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtSubTotalActionPerformed
        subTotals = (Double.valueOf(txtItemQuantity.getText()) * Double.valueOf(txtItemPrice.getText()));
        txtSubTotal.setText(subTotals + "");
     }//GEN-LAST:event_txtSubTotalActionPerformed
 
     private void txtChangeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtChangeActionPerformed
-        txtChangeValue = (Double.valueOf(txtCash.getText()) - Double.valueOf(txtTotalAmount.getText()));
-        txtChange.setText(txtChangeValue + "");
+        change = (Double.valueOf(txtCash.getText()) - Double.valueOf(txtTotalAmount.getText()));
+        txtChange.setText(change + "");
     }//GEN-LAST:event_txtChangeActionPerformed
+
+    private void buttonPayActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonPayActionPerformed
+        cashs = Double.valueOf(txtCash.getText());
+        changes = Double.valueOf(txtChange.getText());
+        totalAmounts = Double.valueOf(txtTotalAmount.getText());
+        try{
+            String qr = "INSERT INTO `cash`(`bill_no`, `total_amount`, `cash`, `cash_change`) VALUES ('"+billNos+"','"+totalAmounts+"','"+cashs+"','"+changes+"')";
+            prestat = conn.prepareStatement(qr);
+            prestat.execute();
+        } catch(Exception e) {
+            JOptionPane.showConfirmDialog(rootPane, e);
+        }
+    }//GEN-LAST:event_buttonPayActionPerformed
+
+    private void txtBillNoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtBillNoActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txtBillNoActionPerformed
 
     /**
      * @param args the command line arguments
@@ -429,9 +547,11 @@ public class Home extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton buttonAdd;
+    private javax.swing.JButton buttonPay;
     private javax.swing.JButton buttonPrint;
     private javax.swing.JCheckBox jCheckBox1;
     private javax.swing.JTextField jTextField4;
+    private javax.swing.JLabel labelBillNo;
     private javax.swing.JLabel labelCash;
     private javax.swing.JLabel labelChange;
     private javax.swing.JLabel labelInvoicePrintingSystem;
@@ -440,6 +560,7 @@ public class Home extends javax.swing.JFrame {
     private javax.swing.JLabel labelQuantity;
     private javax.swing.JLabel labelSubTotal;
     private javax.swing.JLabel labelTotalAmount;
+    private javax.swing.JTextField txtBillNo;
     private javax.swing.JTextField txtCash;
     private javax.swing.JTextField txtChange;
     private javax.swing.JTextField txtItemName;
